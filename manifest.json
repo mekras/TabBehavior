@@ -17,5 +17,9 @@
         "scripts": [
             "main.js"
         ]
+    },
+    "icons": {
+        "32": "assets/icons/tab-behavior-32.png",
+        "48": "assets/icons/tab-behavior-48.png"
     }
 }
