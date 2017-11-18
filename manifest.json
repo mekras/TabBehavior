@@ -1,12 +1,12 @@
 {
     "manifest_version": 2,
-    "name": "TabBehaviour",
+    "name": "TabBehavior",
     "version": "0.1.1",
-    "description": "Changes tab opening and closing behaviour.",
-    "homepage_url": "https://github.com/mekras/TabBehaviour",
+    "description": "Changes tab opening and closing behavior.",
+    "homepage_url": "https://github.com/mekras/TabBehavior",
     "applications": {
         "gecko": {
-            "id": "tab-behaviour@vsepofigu.ru",
+            "id": "tab-behavior@vsepofigu.ru",
             "strict_min_version": "57.0"
         }
     },
