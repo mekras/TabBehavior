@@ -55,6 +55,7 @@ class TabManager {
   onTabActivated (tabInfo) {
     console.log(`[TabManager.onTabActivated] ID: ${tabInfo.tabId}`)
     browser.tabs.get(tabInfo.tabId).then((tab) => {
+      console.log(`[TabManager.onTabActivated] index: ${tab.index}; pinned: ${tab.pinned}`)
       this.activeTabs[tab.windowId] = tab
     })
   }
@@ -71,6 +72,17 @@ class TabManager {
     if (activeTab !== undefined && activeTab.id === tabId) {
       this.activeTabs[tabInfo.windowId].index = tabInfo.toIndex
     }
+  }
+
+  /**
+   * Перемещает вкладку.
+   *
+   * @param {Number} tabId Идентификатор перемещаемой вкладки.
+   * @param {Number} newIndex Новый индекс перемещаемой вкладки.
+   */
+  moveTab (tabId, newIndex) {
+    console.log(`[TabManager.moveTab] Moving tab ${tabId} to index: ${newIndex}`)
+    browser.tabs.move(tabId, {index: newIndex})
   }
 }
 
@@ -120,17 +132,34 @@ class NewTabNextStrategy extends NewTabStrategy {
   }
 
   /**
-   * Обрабатывает событие создания новой вкладки>
+   * Обрабатывает событие создания новой вкладки.
    *
    * @params {tabs.Tab} tab
    */
   onTabCreated (tab) {
     console.log(`[NewTabStrategy.onTabCreated] ID: ${tab.id}, index: ${tab.index}`)
+
     let activeTab = this.tabManager.getActiveTab(tab.windowId)
     if (activeTab) {
-      let newIndex = activeTab.index + 1
-      console.log(`[NewTabStrategy.onTabCreated] Moving tab ${tab.id} to index: ${newIndex}`)
-      browser.tabs.move(tab.id, {index: newIndex})
+      if (activeTab.pinned) {
+        browser.tabs.query({windowId: activeTab.windowId, pinned: true}).then((tabs) => {
+          if (tabs.length > 0) {
+            let maxPinnedIndex = 0
+            tabs.forEach((tab) => {
+              if (tab.index > maxPinnedIndex) {
+                maxPinnedIndex = tab.index
+              }
+            })
+            this.tabManager.moveTab(tab.id, maxPinnedIndex + 1)
+          } else {
+            this.tabManager.moveTab(tab.id, activeTab.index + 1)
+          }
+        })
+      } else {
+        this.tabManager.moveTab(tab.id, activeTab.index + 1)
+      }
+    } else {
+      console.log(`[NewTabStrategy.onTabCreated] Active tab is undefined`)
     }
   }
 }
@@ -164,7 +193,10 @@ class RemoveTabActivateLeftStrategy extends RemoveTabStrategy {
     if (activeTab) {
       if (tabId === activeTab.id && !removeInfo.isWindowClosing) {
         console.log(`[RemoveTabActivateLeftStrategy.onTabRemoved] found active tab: ${activeTab.id}`)
-        browser.tabs.query({windowId: activeTab.windowId, index: activeTab.index - 1}).then((tabs) => {
+        browser.tabs.query({
+          windowId: activeTab.windowId,
+          index: activeTab.index - 1
+        }).then((tabs) => {
           if (tabs.length > 0) {
             console.log(
               `[RemoveTabActivateLeftStrategy.onTabRemoved] Changing focus to ${tabs[0].index}`)
